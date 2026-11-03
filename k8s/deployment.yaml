@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: ecommerce
   namespace: ecommerce
+  labels:
+    app: ecommerce
 spec:
   replicas: 2
   revisionHistoryLimit: 3
@@ -21,20 +23,21 @@ spec:
     spec:
       containers:
         - name: ecommerce
-          image: ecommerce:1.0.0
+          image: ecommerce:1.0.1
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: http
             initialDelaySeconds: 2
             periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: http
             initialDelaySeconds: 10
             periodSeconds: 10
           resources:
@@ -45,9 +48,13 @@ spec:
               cpu: 250m
               memory: 128Mi
           securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
             allowPrivilegeEscalation: false
             capabilities:
-              drop: [ALL]
+              drop:
+                - ALL
             seccompProfile:
               type: RuntimeDefault
 ---
@@ -63,5 +70,5 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 8080
+      targetPort: http
       protocol: TCP
